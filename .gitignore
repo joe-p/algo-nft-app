@@ -1,0 +1,7 @@
+*.teal
+*.dr
+*.tx
+*.rej
+*.js.map
+node_modules/
+index.js
