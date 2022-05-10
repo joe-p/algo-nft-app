@@ -2,14 +2,14 @@ CLEAN_TESTS="rm -f tests/*.teal tests/index.js* tests/dryruns/*"
 
 test:
 	eval ${CLEAN_TESTS}
-	cd tests && ../contract.py && npx tsc && npx jest
+	cd tests && ruby ../contract.rb && npx tsc && npx jest
 
 clean:
 	rm -f *.teal
 	eval ${CLEAN_TESTS}
 
 teal: 
-	python3 contract.py
+	ruby contract.rb
 
 lint:
 	cd tests && npx eslint index.ts
