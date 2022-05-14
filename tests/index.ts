@@ -1,4 +1,4 @@
-import algosdk from '../../../joe-p/js-algorand-sdk'
+import algosdk from 'algosdk'
 import * as fs from 'fs'
 
 const server = 'http://localhost'
