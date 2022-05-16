@@ -34,6 +34,7 @@ class Approval < TEALrb::Contract
     starting_price = btoi(AppArgs[1])
     duration = btoi(AppArgs[2])
 
+    assert Global['Owner'] == Txn.sender
     assert Global['TX Methods'] & 4
     assert payment.receiver == Global.current_application_address
     assert payment.amount == 100_000
@@ -81,7 +82,7 @@ class Approval < TEALrb::Contract
     itxn_begin
     itxn_field 'TypeEnum', TxnType.pay
     itxn_field 'Receiver', receiver
-    itxn_field 'Amount', amount - 1000
+    itxn_field 'Amount', amount - Global.min_txn_fee
     itxn_submit
   end
 
