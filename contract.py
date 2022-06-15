@@ -6,17 +6,17 @@ ARGS = Txn.application_args
 FEE = Int(1000)
 
 # Global Bytes (4)
-OWNER = Bytes("Owner")
-ROYALTY_ADDR = Bytes("Royalty Address")
-HIGHEST_BIDDER = Bytes("Highest Bidder")
-METADATA = Bytes("Metadata")
+OWNER = Bytes("owner")
+ROYALTY_ADDR = Bytes("royaltyAddress")
+HIGHEST_BIDDER = Bytes("highestBidder")
+METADATA = Bytes("metadata")
 
 # Global Ints (5)
-AUCTION_END = Bytes("Auction End")
-TX_METHODS = Bytes("TX Methods")
-SALE_PRICE = Bytes("Sale Price")
-HIGHEST_BID = Bytes("Highest Bid")
-ROYALTY_PERCENT = Bytes("Royalty Percent")
+AUCTION_END = Bytes("auctionEnd")
+TX_METHODS = Bytes("txMethods")
+SALE_PRICE = Bytes("salePrice")
+HIGHEST_BID = Bytes("highestBid")
+ROYALTY_PERCENT = Bytes("royaltyPercent")
 
 # TX_METHODS is a 3-bit bitmask for allowed ways to transfer ownership. 
 # bit[2](MSB) = auction, bit[1] = sell, bit[0](LSB) = transfer
@@ -148,7 +148,7 @@ def end_auction():
         pay(royalty_address, royalty_amount),
         pay(owner, highest_bid - royalty_amount),
         set(AUCTION_END, Int(0)),
-        set(OWNER, App.globalGet( Bytes("Highest Bidder"))),
+        set(OWNER, get(HIGHEST_BIDDER)),
         set(HIGHEST_BIDDER, Bytes("")),
         Approve()
     )

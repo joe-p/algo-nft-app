@@ -1,4 +1,4 @@
-import algosdk from '../../../joe-p/js-algorand-sdk'
+import algosdk from 'algosdk'
 import * as fs from 'fs'
 
 const server = 'http://localhost'
@@ -198,39 +198,39 @@ describe('App Creation', () => {
   })
 
   it('Global[Metadata] == desired metadata', () => {
-    expect(globalState.Metadata).toBe('Hello World!')
+    expect(globalState.metadata).toBe('Hello World!')
   })
 
   it('Global[Owner] == creator address', () => {
-    expect(globalState.Owner).toBe(creator.addr)
+    expect(globalState.owner).toBe(creator.addr)
   })
 
   it('Global[Royalty Address] == royalty address', () => {
-    expect(globalState['Royalty Address']).toBe(royaltyAccount.addr)
+    expect(globalState.royaltyAddress).toBe(royaltyAccount.addr)
   })
 
   it('Global[Royalty Percent] == given royalty percent', () => {
-    expect(globalState['Royalty Percent']).toBe(9)
+    expect(globalState.royaltyPercent).toBe(9)
   })
 
   it('Global[Auction End] == 0', () => {
-    expect(globalState['Auction End']).toBe(0)
+    expect(globalState.auctionEnd).toBe(0)
   })
 
   it('Global[Sale Price] == 0', () => {
-    expect(globalState['Sale Price']).toBe(0)
+    expect(globalState.salePrice).toBe(0)
   })
 
   it('Global[Highest Bidder] == undefined', () => {
-    expect(globalState['Highest Bidder']).toBe(undefined)
+    expect(globalState.highestBidder).toBe(undefined)
   })
 
   it('Global[Highest Bid] == undefined', () => {
-    expect(globalState['Highest Bid']).toBe(0)
+    expect(globalState.highestBid).toBe(0)
   })
 
   it('Global[TX Methods] == given mask', () => {
-    expect(globalState['TX Methods']).toBe(7)
+    expect(globalState.txMethods).toBe(7)
   })
 
   afterAll(async () => {
@@ -305,11 +305,11 @@ describe('Auction Start', () => {
   })
 
   it('Global[Highest Bid] == starting amount', () => {
-    expect(globalDelta['Highest Bid']).toBe(10)
+    expect(globalDelta.highestBid).toBe(10)
   })
 
   it('Global[Auction End] == latestTimestamp + auction length', () => {
-    expect(globalDelta['Auction End']).toBe(3_601)
+    expect(globalDelta.auctionEnd).toBe(3_601)
   })
 
   afterAll(async () => {
@@ -324,7 +324,7 @@ async function getBidTxns (id: number, from: algosdk.Account, bid: number) {
 
   const accounts = [] as Array<string>
   const gState = getReadableGlobalState((await algodClient.getApplicationByID(id).do()).params['global-state'])
-  const highestBidder = gState['Highest Bidder']
+  const highestBidder = gState.highestBidder
 
   if (highestBidder) {
     accounts.push(highestBidder as string)
@@ -397,11 +397,11 @@ describe('First Bid', () => {
   })
 
   it('Highest Bid == bid amount', () => {
-    expect(globalDelta['Highest Bid']).toBe(123_321)
+    expect(globalDelta.highestBid).toBe(123_321)
   })
 
   it('Highest Bidder == bidder address', () => {
-    expect(globalDelta['Highest Bidder']).toBe(bidder.addr)
+    expect(globalDelta.highestBidder).toBe(bidder.addr)
   })
 
   afterAll(async () => {
@@ -456,11 +456,11 @@ describe('Second Bid', () => {
   })
 
   it('Highest Bid == bid amount', () => {
-    expect(globalDelta['Highest Bid']).toBe(321_321)
+    expect(globalDelta.highestBid).toBe(321_321)
   })
 
   it('Highest Bidder == bidder address', () => {
-    expect(globalDelta['Highest Bidder']).toBe(secondBidder.addr)
+    expect(globalDelta.highestBidder).toBe(secondBidder.addr)
   })
 
   it('First bidder gets bid back (minus txn fee x3)', async () => {
@@ -485,8 +485,8 @@ async function getAuctionEndTxn (id: number, from: algosdk.Account) {
   const accounts = [] as Array<string>
 
   const gState = getReadableGlobalState((await algodClient.getApplicationByID(id).do()).params['global-state'])
-  const highestBidder = gState['Highest Bidder']
-  const royaltyAddress = gState['Royalty Address']
+  const highestBidder = gState.highestBidder
+  const royaltyAddress = gState.royaltyAddress
 
   if (highestBidder) {
     accounts.push(highestBidder as string)
@@ -560,15 +560,15 @@ describe('Auction End', () => {
   })
 
   it('Auction End == 0', () => {
-    expect(globalDelta['Auction End']).toBe(0)
+    expect(globalDelta.auctionEnd).toBe(0)
   })
 
   it('Owner == Highest Bidder', () => {
-    expect(globalDelta.Owner).toBe(secondBidder.addr)
+    expect(globalDelta.owner).toBe(secondBidder.addr)
   })
 
   it('Highest Bidder == undefined', () => {
-    expect(globalDelta['Highest Bidder']).toBe(undefined)
+    expect(globalDelta.highestBidder).toBe(undefined)
   })
 
   afterAll(async () => {
@@ -629,7 +629,7 @@ describe('Sale Start', () => {
   })
 
   it('Sale Price == given sale price', () => {
-    expect(globalDelta['Sale Price']).toBe(100)
+    expect(globalDelta.salePrice).toBe(100)
   })
 
   afterAll(async () => {
@@ -641,7 +641,7 @@ async function getBuyTxns (id: number, from: algosdk.Account, price: number) {
   const appResult = await algodClient.getApplicationByID(id).do()
 
   const gState = (getReadableGlobalState(appResult.params['global-state']))
-  const royaltyPercentState = gState['Royalty Percent'] as number
+  const royaltyPercentState = gState.royaltyPercent as number
   const payPercent = (100 - royaltyPercentState) / 100
   const royaltyPercent = (royaltyPercentState) / 100
 
@@ -659,14 +659,14 @@ async function getBuyTxns (id: number, from: algosdk.Account, price: number) {
   const payObj = {
     suggestedParams: { ...suggestedParams },
     from: from.addr,
-    to: gState.Owner,
+    to: gState.owner,
     amount: Math.round(price * payPercent)
   } as any
 
   const royaltyObj = {
     suggestedParams: { ...suggestedParams },
     from: from.addr,
-    to: gState['Royalty Address'],
+    to: gState.royaltyAddress,
     amount: Math.round(price * royaltyPercent)
   } as any
 
@@ -728,11 +728,11 @@ describe('Buy', () => {
   })
 
   it('Sale Price == undefined', () => {
-    expect(globalDelta['Sale Price']).toBe(undefined)
+    expect(globalDelta.salePrice).toBe(undefined)
   })
 
   it('Owner == buyer address', () => {
-    expect(globalDelta.Owner).toBe(buyer.addr)
+    expect(globalDelta.owner).toBe(buyer.addr)
   })
 
   it('Owner balance += sale_price*(100-royalty percent)', async () => {
@@ -811,7 +811,7 @@ describe('Transfer', () => {
   })
 
   it('Owner == receiver', () => {
-    expect(globalDelta.Owner).toBe(receiver.addr)
+    expect(globalDelta.owner).toBe(receiver.addr)
   })
 
   afterAll(async () => {

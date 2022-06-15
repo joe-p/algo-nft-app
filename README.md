@@ -5,15 +5,15 @@ This repository contains an algorand smart contract that acts as an NFT.
 
 | Key             | Type    | Description                                                                           |
 |-----------------|---------|---------------------------------------------------------------------------------------|
-| Owner           | Account | Owner of the NFT. This is the person that can initiate auctions, sales, or transfers. |
-| Royalty Address | Account | Account that receives royalties from auctions and sales                               |
-| Royalty Percent | Integer | The percent the royalty address receives from sales and auctions                      |
-| Metadata        | Bytes   | Arbitrary metadata set by the creator of the NFT                                      |
-| Highest Bidder  | Account | Account with the highest bid if an auction is taking place                            |
-| Highest Bid     | Integer | The highest bid if an auction is taking place                                         |
-| Auction End     | Integer | The end time for an ongoing auction                                                   |
-| Sale Price      | Integer | The price of the token if the owner is selling                                        |
-| TX Methods      | Integer | A bit mask indicating if the NFT can be auctioned, sold, and/or transferred           |
+| owner           | Account | Owner of the NFT. This is the person that can initiate auctions, sales, or transfers. |
+| royaltyAddress  | Account | Account that receives royalties from auctions and sales                               |
+| royaltyPercent  | Integer | The percent the royalty address receives from sales and auctions                      |
+| metadata        | Bytes   | Arbitrary metadata set by the creator of the NFT                                      |
+| highestBidder   | Account | Account with the highest bid if an auction is taking place                            |
+| highestBid      | Integer | The highest bid if an auction is taking place                                         |
+| auctionEnd      | Integer | The end time for an ongoing auction                                                   |
+| salePrice       | Integer | The price of the token if the owner is selling                                        |
+| txMethods       | Integer | A bit mask indicating if the NFT can be auctioned, sold, and/or transferred           |
 
 # Why not use ASA?
 ASAs lack the programmability that is possible with smart contracts. The main goal I wanted to accomplish here was **on-chain** enforcement of royalties, which just isn't possible with ASAs. 
