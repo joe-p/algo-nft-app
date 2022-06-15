@@ -26,7 +26,3 @@ Right now there is very little input validation and likely a lot of exploits. Th
 
 ## Implement a Controlled ASA
 To conform with ARC3 standards, it would be useful to have the smart contract control an ASA that is associated with ownership of a contract. 
-
-## Separate Market Functionality from NFT
-
-To reduce network congestion and chain growth, there should be a single contract that all instances of NFTs leverage for managing auctions and sales, with the local storage for the application account keeping track of relevant data. In the current implementation, the minting of each NFT is going to be a large transaction due to the size of smart contract. 
