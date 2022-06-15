@@ -60,19 +60,24 @@ def buy():
     royalty_payment = Gtxn[2]
     payment = Gtxn[1]
 
-    royalty_amt = get(SALE_PRICE) * get(ROYALTY_PERCENT) / Int(100)
-    purchase_amt = get(SALE_PRICE) - royalty_amt
+    sale_price = get(SALE_PRICE)
+    royalty_percent = get(ROYALTY_PERCENT)
+    royalty_address = get(ROYALTY_ADDR)
+    owner = get(OWNER)
+
+    royalty_amt = sale_price * royalty_percent / Int(100)
+    purchase_amt = sale_price - royalty_amt
     
     return Seq(
-        Assert(get(SALE_PRICE) > Int(0)),
+        Assert(sale_price > Int(0)),
         
         # Verify senders are all the same
         Assert(royalty_payment.sender() == payment.sender()),
         Assert(Txn.sender() == payment.sender()),
 
         # Verify receivers are correct
-        Assert(royalty_payment.receiver() == get(ROYALTY_ADDR)),
-        Assert(payment.receiver() == get(OWNER)),
+        Assert(royalty_payment.receiver() == royalty_address),
+        Assert(payment.receiver() == owner),
 
         # Verify amounts are correct
         Assert(royalty_payment.amount() == royalty_amt),
@@ -85,17 +90,22 @@ def buy():
 
 def start_sale():
     price = Btoi(ARGS[1])
+
+    tx_methods = get(TX_METHODS)
+    owner = get(OWNER)
     
     return Seq(
-        Assert(get(TX_METHODS) & Int(2)), # TX_METHODS bit[1] is set
-        Assert(Txn.sender() == get(OWNER)),
+        Assert(tx_methods & Int(2)), # TX_METHODS bit[1] is set
+        Assert(Txn.sender() == owner),
         set(SALE_PRICE, price),
         Approve()
     )
 
 def end_sale():
+    owner = get(OWNER)
+
     return Seq(
-        Assert(Txn.sender() == get(OWNER)),
+        Assert(Txn.sender() == owner),
         set(SALE_PRICE, Int(0)),
         Approve()
     )
@@ -103,9 +113,12 @@ def end_sale():
 def transfer():
     receiver = ARGS[1]
 
+    tx_methods = get(TX_METHODS)
+    owner = get(OWNER)
+
     return Seq(
-        Assert(get(TX_METHODS) & Int(1)), # TX Methods bit[0] is set
-        Assert(Txn.sender() == get(OWNER)),
+        Assert(tx_methods & Int(1)), # TX Methods bit[0] is set
+        Assert(Txn.sender() == owner),
         set(OWNER, receiver),
         Approve()
     )
@@ -115,9 +128,11 @@ def start_auction():
 
     starting_price = Btoi(ARGS[1])
     length = Btoi(ARGS[2])
+    
+    tx_methods = get(TX_METHODS)
 
     return Seq(
-        Assert(get(TX_METHODS) & Int(4) ), # TX Methods bit[2] is set
+        Assert(tx_methods & Int(4) ), # TX Methods bit[2] is set
         Assert(payment.receiver() == Global.current_application_address()),
         Assert(payment.amount() == Int(100000)),
         set(AUCTION_END, Global.latest_timestamp() + length),
@@ -137,18 +152,20 @@ def pay(receiver, amount):
     )
 
 def end_auction():
+    auction_end = get(AUCTION_END)
     highest_bid = get(HIGHEST_BID)
     royalty_percent = get(ROYALTY_PERCENT)
     royalty_amount = highest_bid * royalty_percent / Int(100)
     royalty_address = get(ROYALTY_ADDR)
     owner = get(OWNER)
+    highest_bidder = get(HIGHEST_BIDDER)
 
     return Seq(
-        Assert( Global.latest_timestamp() > get(AUCTION_END) ),
+        Assert( Global.latest_timestamp() > auction_end ),
         pay(royalty_address, royalty_amount),
         pay(owner, highest_bid - royalty_amount),
         set(AUCTION_END, Int(0)),
-        set(OWNER, get(HIGHEST_BIDDER)),
+        set(OWNER, highest_bidder),
         set(HIGHEST_BIDDER, Bytes("")),
         Approve()
     )
@@ -156,11 +173,13 @@ def end_auction():
 def bid():
     payment = Gtxn[1]
     app_call = Gtxn[0]
+
+    auction_end = get(AUCTION_END)
     highest_bidder = get(HIGHEST_BIDDER)
     highest_bid = get(HIGHEST_BID)
 
     return Seq(
-        Assert(Global.latest_timestamp() < get(AUCTION_END) ),
+        Assert(Global.latest_timestamp() < auction_end ),
         Assert(payment.amount() > highest_bid),
         Assert(app_call.sender() == payment.sender()),
         If( highest_bidder != Bytes(""), pay(highest_bidder, highest_bid) ),
