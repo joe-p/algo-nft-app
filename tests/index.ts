@@ -29,7 +29,7 @@ const schema = {
   },
   global: {
     bytes: 4,
-    ints: 7
+    ints: 8
   }
 } as AppSchema
 
@@ -160,9 +160,10 @@ async function createAppTxn (creator: algosdk.Account, royaltyAddress: algosdk.A
       algosdk.decodeAddress(royaltyAddress.addr).publicKey,
       algosdk.encodeUint64(royaltyPercent),
       new Uint8Array(Buffer.from(metadata)),
-      algosdk.encodeUint64(1),
-      algosdk.encodeUint64(1),
-      algosdk.encodeUint64(1)
+      algosdk.encodeUint64(1), // allowTransfer
+      algosdk.encodeUint64(1), // allowSale
+      algosdk.encodeUint64(1), // allowAuction
+      algosdk.encodeUint64(0) // asaID
     ]
   } as any
 
@@ -264,6 +265,10 @@ describe('App Creation', () => {
 
   it('Global[allowAuction] == 1', () => {
     expect(globalState.allowAuction).toBe(1)
+  })
+
+  it('Global[asaID] == 1', () => {
+    expect(globalState.asaID).toBe(0)
   })
 
   afterAll(async () => {

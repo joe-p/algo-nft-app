@@ -18,6 +18,8 @@ ROYALTY_PERCENT = Bytes("royaltyPercent")
 ALLOW_TRANSFER = Bytes("allowTransfer")
 ALLOW_SALE = Bytes("allowSale")
 ALLOW_AUCTION = Bytes("allowAuction")
+ASA_ID = Bytes("asaID")
+
 
 def set(key, value):
     if type(value) == str:
@@ -32,6 +34,31 @@ def get(key):
     return App.globalGet(key)
 
 
+@Subroutine(TealType.none)
+def clawback_asa():
+    asa_id = get(ASA_ID)
+    highest_bidder = get(HIGHEST_BIDDER)
+
+    clawback_txn = Seq(
+        InnerTxnBuilder.Begin(),
+        InnerTxnBuilder.SetFields(
+            {
+                TxnField.type_enum: TxnType.AssetTransfer,
+                TxnField.receiver: Global.current_application_address(),
+                TxnField.amount: Int(1),
+                TxnField.asset_sender: highest_bidder,
+            }
+        ),
+    )
+
+    clawback_seq = Seq(
+        contract_holding := AssetHolding.balance(highest_bidder, asa_id),
+        If(contract_holding.value(), clawback_txn),
+    )
+
+    return If(asa_id != Int(0), clawback_seq)
+
+
 def init():
     royalty_addr = ARGS[0]
     royalty_percent = Btoi(ARGS[1])
@@ -39,13 +66,13 @@ def init():
     allow_transfer = Btoi(ARGS[3])
     allow_sale = Btoi(ARGS[4])
     allow_auction = Btoi(ARGS[5])
-
+    asa_id = Btoi(ARGS[6])
 
     return Seq(
         # Set global bytes
         set(ROYALTY_ADDR, royalty_addr),
         set(OWNER, Txn.sender()),
-        set(HIGHEST_BIDDER, ""), 
+        set(HIGHEST_BIDDER, ""),
         set(METADATA, metadata),
         # Set global ints
         set(ROYALTY_PERCENT, royalty_percent),
@@ -53,8 +80,9 @@ def init():
         set(ALLOW_TRANSFER, allow_transfer),
         set(ALLOW_SALE, allow_sale),
         set(ALLOW_AUCTION, allow_auction),
-        set(SALE_PRICE, 0), 
+        set(SALE_PRICE, 0),
         set(HIGHEST_BID, 0),
+        set(ASA_ID, asa_id),
         Approve(),
     )
 
@@ -85,6 +113,7 @@ def buy():
         # Update global state
         set(OWNER, Txn.sender()),
         set(SALE_PRICE, 0),
+        clawback_asa(),
         Approve(),
     )
 
@@ -119,6 +148,7 @@ def transfer():
         Assert(allow_transfer),
         Assert(Txn.sender() == owner),
         set(OWNER, receiver),
+        clawback_asa(),
         Approve(),
     )
 
@@ -175,6 +205,7 @@ def end_auction():
         set(AUCTION_END, 0),
         set(OWNER, highest_bidder),
         set(HIGHEST_BIDDER, ""),
+        clawback_asa(),
         Approve(),
     )
 
