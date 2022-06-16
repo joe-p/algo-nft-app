@@ -47,6 +47,7 @@ def clawback_asa():
                 TxnField.receiver: Global.current_application_address(),
                 TxnField.amount: Int(1),
                 TxnField.asset_sender: highest_bidder,
+                TxnField.xfer_asset: asa_id,
             }
         ),
     )
@@ -57,6 +58,26 @@ def clawback_asa():
     )
 
     return If(asa_id != Int(0), clawback_seq)
+
+
+def claim_asa():
+    asa_id = get(ASA_ID)
+    owner = get(OWNER)
+
+    axfer_txn = Seq(
+        InnerTxnBuilder.Begin(),
+        InnerTxnBuilder.SetFields(
+            {
+                TxnField.type_enum: TxnType.AssetTransfer,
+                TxnField.receiver: owner,
+                TxnField.amount: Int(1),
+                TxnField.asset_sender: Global.current_application_address(),
+                TxnField.xfer_asset: asa_id,
+            }
+        ),
+    )
+
+    return If(asa_id != Int(0), Seq(axfer_txn, Approve()), Reject())
 
 
 def init():
@@ -247,6 +268,7 @@ def approval():
         [fcn == Bytes("end_auction"), end_auction()],
         [fcn == Bytes("transfer"), transfer()],
         [fcn == Bytes("buy"), buy()],
+        [fcn == Bytes("claim_asa"), claim_asa()],
     )
 
 
