@@ -64,7 +64,8 @@ def claim_asa():
     asa_id = get(ASA_ID)
     owner = get(OWNER)
 
-    axfer_txn = Seq(
+    return Seq(
+        Assert(asa_id),
         InnerTxnBuilder.Begin(),
         InnerTxnBuilder.SetFields(
             {
@@ -75,9 +76,8 @@ def claim_asa():
                 TxnField.xfer_asset: asa_id,
             }
         ),
+        Approve(),
     )
-
-    return If(asa_id != Int(0), Seq(axfer_txn, Approve()), Reject())
 
 
 def init():
