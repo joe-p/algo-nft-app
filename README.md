@@ -13,7 +13,10 @@ This repository contains an algorand smart contract that acts as an NFT.
 | highestBid      | Integer | The highest bid if an auction is taking place                                         |
 | auctionEnd      | Integer | The end time for an ongoing auction                                                   |
 | salePrice       | Integer | The price of the token if the owner is selling                                        |
-| txMethods       | Integer | A bit mask indicating if the NFT can be auctioned, sold, and/or transferred           |
+| allowTransfer   | Integer | Allows the transfering of the NFT without any payment if non-zero                     |
+| allowSale       | Integer | Allows the sale of the NFT if non-zero                                                |
+| allowAuction    | Integer | Allows the auction of the NFT if non-zero                                             |
+
 
 # Why not use ASA?
 ASAs lack the programmability that is possible with smart contracts. The main goal I wanted to accomplish here was **on-chain** enforcement of royalties, which just isn't possible with ASAs. 

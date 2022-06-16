@@ -9,6 +9,30 @@ const kmdClient = new algosdk.Kmd(token, server, 4002)
 const kmdWallet = 'unencrypted-default-wallet'
 const kmdPassword = ''
 
+const firstBidAmount = 111_111
+const secondBidAmount = 222_222
+
+interface StateSchema {
+  bytes: number
+  ints: number
+}
+
+interface AppSchema {
+  local: StateSchema,
+  global: StateSchema
+}
+
+const schema = {
+  local: {
+    bytes: 0,
+    ints: 0
+  },
+  global: {
+    bytes: 4,
+    ints: 7
+  }
+} as AppSchema
+
 // Based on https://github.com/algorand-devrel/demo-abi/blob/master/js/sandbox.ts
 async function getAccounts (): Promise<algosdk.Account[]> {
   const wallets = await kmdClient.listWallets()
@@ -120,15 +144,15 @@ async function closeAccount (accountToClose: algosdk.Account, closeTo: algosdk.A
   await algosdk.waitForConfirmation(algodClient, txId, 3)
 }
 
-async function createAppTxn (creator: algosdk.Account, royaltyAddress: algosdk.Account, royaltyPercent: number, metadata: string, txMethods: number) {
+async function createAppTxn (creator: algosdk.Account, royaltyAddress: algosdk.Account, royaltyPercent: number, metadata: string) {
   const approval = await compileProgram(fs.readFileSync('approval.teal').toString())
   const clear = await compileProgram(fs.readFileSync('clear.teal').toString())
 
   const appObj = {
     suggestedParams: await algodClient.getTransactionParams().do(),
     from: creator.addr,
-    numGlobalByteSlices: 4,
-    numGlobalInts: 6,
+    numGlobalByteSlices: schema.global.bytes,
+    numGlobalInts: schema.global.ints,
     approvalProgram: approval,
     clearProgram: clear,
     extraPages: 1,
@@ -136,7 +160,9 @@ async function createAppTxn (creator: algosdk.Account, royaltyAddress: algosdk.A
       algosdk.decodeAddress(royaltyAddress.addr).publicKey,
       algosdk.encodeUint64(royaltyPercent),
       new Uint8Array(Buffer.from(metadata)),
-      algosdk.encodeUint64(txMethods)
+      algosdk.encodeUint64(1),
+      algosdk.encodeUint64(1),
+      algosdk.encodeUint64(1)
     ]
   } as any
 
@@ -161,7 +187,6 @@ describe('App Creation', () => {
   let royaltyAccount: algosdk.Account
   let globalState: ReadableGlobalStateDelta
   let rawGlobalState: Array<GlobalStateDelta>
-  const globalSchema = { ints: 5, bytes: 4 }
 
   beforeAll(async () => {
     const accounts = await getAccounts()
@@ -173,7 +198,7 @@ describe('App Creation', () => {
 
     royaltyAccount = algosdk.generateAccount()
 
-    const appTxn = await createAppTxn(creator, royaltyAccount, 9, 'Hello World!', 7)
+    const appTxn = await createAppTxn(creator, royaltyAccount, 9, 'Hello World!')
     const appDr = await createDryRunFromTxns([appTxn], 'app_create')
     const appDrRes = await algodClient.dryrun(appDr).do()
     rawGlobalState = appDrRes.txns[0]['global-delta']
@@ -193,8 +218,8 @@ describe('App Creation', () => {
       }
     })
 
-    expect(ints).toBe(globalSchema.ints)
-    expect(bytes).toBe(globalSchema.bytes)
+    expect(ints).toBe(schema.global.ints)
+    expect(bytes).toBe(schema.global.bytes)
   })
 
   it('Global[Metadata] == desired metadata', () => {
@@ -229,8 +254,16 @@ describe('App Creation', () => {
     expect(globalState.highestBid).toBe(0)
   })
 
-  it('Global[TX Methods] == given mask', () => {
-    expect(globalState.txMethods).toBe(7)
+  it('Global[allowTransfer] == 1', () => {
+    expect(globalState.allowTransfer).toBe(1)
+  })
+
+  it('Global[allowSale] == 1', () => {
+    expect(globalState.allowSale).toBe(1)
+  })
+
+  it('Global[allowAuction] == 1', () => {
+    expect(globalState.allowAuction).toBe(1)
   })
 
   afterAll(async () => {
@@ -287,7 +320,7 @@ describe('Auction Start', () => {
 
     royaltyAccount = algosdk.generateAccount()
 
-    const appTxn = await createAppTxn(creator, royaltyAccount, 9, 'Hello World!', 7)
+    const appTxn = await createAppTxn(creator, royaltyAccount, 9, 'Hello World!')
     const createResult = await sendTxn(appTxn)
 
     const appID = createResult['application-index']
@@ -373,7 +406,7 @@ describe('First Bid', () => {
 
     royaltyAccount = algosdk.generateAccount()
 
-    const appTxn = await createAppTxn(creator, royaltyAccount, 9, 'Hello World!', 7)
+    const appTxn = await createAppTxn(creator, royaltyAccount, 9, 'Hello World!')
     const createResult = await sendTxn(appTxn)
 
     const appID = createResult['application-index']
@@ -384,7 +417,7 @@ describe('First Bid', () => {
     bidder = algosdk.generateAccount()
     await fundAccount(funder, bidder, 10_000_000)
 
-    const bidTxns = await getBidTxns(appID, bidder, 123_321)
+    const bidTxns = await getBidTxns(appID, bidder, firstBidAmount)
     const bidDr = await createDryRunFromTxns(bidTxns, 'first_bid')
 
     const bidDrResult = await algodClient.dryrun(bidDr).do()
@@ -397,7 +430,7 @@ describe('First Bid', () => {
   })
 
   it('Highest Bid == bid amount', () => {
-    expect(globalDelta.highestBid).toBe(123_321)
+    expect(globalDelta.highestBid).toBe(firstBidAmount)
   })
 
   it('Highest Bidder == bidder address', () => {
@@ -428,7 +461,7 @@ describe('Second Bid', () => {
 
     royaltyAccount = algosdk.generateAccount()
 
-    const appTxn = await createAppTxn(creator, royaltyAccount, 9, 'Hello World!', 7)
+    const appTxn = await createAppTxn(creator, royaltyAccount, 9, 'Hello World!')
     const createResult = await sendTxn(appTxn)
 
     appID = createResult['application-index']
@@ -441,10 +474,10 @@ describe('Second Bid', () => {
     secondBidder = algosdk.generateAccount()
     await fundAccount(funder, secondBidder, 10_000_000)
 
-    const firstBidTxns = await getBidTxns(appID, firstBidder, 123_321)
+    const firstBidTxns = await getBidTxns(appID, firstBidder, firstBidAmount)
     await sendTxn(firstBidTxns)
 
-    const secondBidTxns = await getBidTxns(appID, secondBidder, 321_321)
+    const secondBidTxns = await getBidTxns(appID, secondBidder, secondBidAmount)
     await createDryRunFromTxns(secondBidTxns, 'second_bid')
     const secondBidResult = await sendTxn(secondBidTxns)
 
@@ -456,7 +489,7 @@ describe('Second Bid', () => {
   })
 
   it('Highest Bid == bid amount', () => {
-    expect(globalDelta.highestBid).toBe(321_321)
+    expect(globalDelta.highestBid).toBe(secondBidAmount)
   })
 
   it('Highest Bidder == bidder address', () => {
@@ -471,7 +504,7 @@ describe('Second Bid', () => {
   it('App balance == second bet + min balance', async () => {
     const appAddr = algosdk.getApplicationAddress(appID)
     const balance = (await algodClient.accountInformation(appAddr).do()).amount
-    expect(balance).toBe(321_321 + 100_000)
+    expect(balance).toBe(secondBidAmount + 100_000)
   })
 
   afterAll(async () => {
@@ -529,7 +562,7 @@ describe('Auction End', () => {
 
     royaltyAccount = algosdk.generateAccount()
 
-    const appTxn = await createAppTxn(creator, royaltyAccount, 9, 'Hello World!', 7)
+    const appTxn = await createAppTxn(creator, royaltyAccount, 9, 'Hello World!')
     const createResult = await sendTxn(appTxn)
 
     appID = createResult['application-index']
@@ -542,10 +575,10 @@ describe('Auction End', () => {
     secondBidder = algosdk.generateAccount()
     await fundAccount(funder, secondBidder, 10_000_000)
 
-    const firstBidTxns = await getBidTxns(appID, firstBidder, 123_321)
+    const firstBidTxns = await getBidTxns(appID, firstBidder, firstBidAmount)
     await sendTxn(firstBidTxns)
 
-    const secondBidTxns = await getBidTxns(appID, secondBidder, 321_321)
+    const secondBidTxns = await getBidTxns(appID, secondBidder, secondBidAmount)
     await sendTxn(secondBidTxns)
 
     const auctionEndTxn = await getAuctionEndTxn(appID, creator)
@@ -612,7 +645,7 @@ describe('Sale Start', () => {
 
     royaltyAccount = algosdk.generateAccount()
 
-    const appTxn = await createAppTxn(creator, royaltyAccount, 9, 'Hello World!', 7)
+    const appTxn = await createAppTxn(creator, royaltyAccount, 9, 'Hello World!')
     const createResult = await sendTxn(appTxn)
 
     appID = createResult['application-index']
@@ -700,7 +733,7 @@ describe('Buy', () => {
 
     royaltyAccount = algosdk.generateAccount()
 
-    const appTxn = await createAppTxn(creator, royaltyAccount, 9, 'Hello World!', 7)
+    const appTxn = await createAppTxn(creator, royaltyAccount, 9, 'Hello World!')
     const createResult = await sendTxn(appTxn)
 
     appID = createResult['application-index']
@@ -791,7 +824,7 @@ describe('Transfer', () => {
 
     royaltyAccount = algosdk.generateAccount()
 
-    const appTxn = await createAppTxn(creator, royaltyAccount, 9, 'Hello World!', 7)
+    const appTxn = await createAppTxn(creator, royaltyAccount, 9, 'Hello World!')
     const createResult = await sendTxn(appTxn)
 
     appID = createResult['application-index']

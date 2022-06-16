@@ -10,16 +10,14 @@ ROYALTY_ADDR = Bytes("royaltyAddress")
 HIGHEST_BIDDER = Bytes("highestBidder")
 METADATA = Bytes("metadata")
 
-# Global Ints (5)
+# Global Ints (7)
 AUCTION_END = Bytes("auctionEnd")
-TX_METHODS = Bytes("txMethods")
 SALE_PRICE = Bytes("salePrice")
 HIGHEST_BID = Bytes("highestBid")
 ROYALTY_PERCENT = Bytes("royaltyPercent")
-
-# TX_METHODS is a 3-bit bitmask for allowed ways to transfer ownership.
-# bit[2](MSB) = auction, bit[1] = sell, bit[0](LSB) = transfer
-
+ALLOW_TRANSFER = Bytes("allowTransfer")
+ALLOW_SALE = Bytes("allowSale")
+ALLOW_AUCTION = Bytes("allowAuction")
 
 def set(key, value):
     if type(value) == str:
@@ -38,20 +36,25 @@ def init():
     royalty_addr = ARGS[0]
     royalty_percent = Btoi(ARGS[1])
     metadata = ARGS[2]
-    tx_methods = Btoi(ARGS[3])  # see comment on TX_METHODS for explanation
+    allow_transfer = Btoi(ARGS[3])
+    allow_sale = Btoi(ARGS[4])
+    allow_auction = Btoi(ARGS[5])
+
 
     return Seq(
         # Set global bytes
-        set(ROYALTY_ADDR, royalty_addr),  # b1
-        set(OWNER, Txn.sender()),  # b2
-        set(HIGHEST_BIDDER, ""),  # b3
-        set(METADATA, metadata),  # b4
+        set(ROYALTY_ADDR, royalty_addr),
+        set(OWNER, Txn.sender()),
+        set(HIGHEST_BIDDER, ""), 
+        set(METADATA, metadata),
         # Set global ints
-        set(ROYALTY_PERCENT, royalty_percent),  # i1
-        set(AUCTION_END, 0),  # i2
-        set(TX_METHODS, tx_methods),  # i3
-        set(SALE_PRICE, 0),  # i4
-        set(HIGHEST_BID, 0),  # i5
+        set(ROYALTY_PERCENT, royalty_percent),
+        set(AUCTION_END, 0),
+        set(ALLOW_TRANSFER, allow_transfer),
+        set(ALLOW_SALE, allow_sale),
+        set(ALLOW_AUCTION, allow_auction),
+        set(SALE_PRICE, 0), 
+        set(HIGHEST_BID, 0),
         Approve(),
     )
 
@@ -89,11 +92,11 @@ def buy():
 def start_sale():
     price = Btoi(ARGS[1])
 
-    tx_methods = get(TX_METHODS)
+    allow_sale = get(ALLOW_SALE)
     owner = get(OWNER)
 
     return Seq(
-        Assert(tx_methods & Int(2)),  # TX_METHODS bit[1] is set
+        Assert(allow_sale),
         Assert(Txn.sender() == owner),
         set(SALE_PRICE, price),
         Approve(),
@@ -109,11 +112,11 @@ def end_sale():
 def transfer():
     receiver = ARGS[1]
 
-    tx_methods = get(TX_METHODS)
+    allow_transfer = get(ALLOW_TRANSFER)
     owner = get(OWNER)
 
     return Seq(
-        Assert(tx_methods & Int(1)),  # TX Methods bit[0] is set
+        Assert(allow_transfer),
         Assert(Txn.sender() == owner),
         set(OWNER, receiver),
         Approve(),
@@ -126,10 +129,10 @@ def start_auction():
     starting_price = Btoi(ARGS[1])
     length = Btoi(ARGS[2])
 
-    tx_methods = get(TX_METHODS)
+    allow_auction = get(ALLOW_AUCTION)
 
     return Seq(
-        Assert(tx_methods & Int(4)),  # TX Methods bit[2] is set
+        Assert(allow_auction),
         # Verify payment txn
         Assert(payment.receiver() == Global.current_application_address()),
         Assert(payment.amount() == Int(100_000)),
