@@ -3,7 +3,6 @@ from pyteal import *
 import os
 
 ARGS = Txn.application_args
-FEE = Int(1000)
 
 # Global Bytes (4)
 OWNER = Bytes("owner")
@@ -49,10 +48,10 @@ def init():
         set(METADATA, metadata),  # b4
         # Set global ints
         set(ROYALTY_PERCENT, royalty_percent),  # i1
-        set(AUCTION_END, Int(0)),  # i2
+        set(AUCTION_END, 0),  # i2
         set(TX_METHODS, tx_methods),  # i3
-        set(SALE_PRICE, Int(0)),  # i4
-        set(HIGHEST_BID, Int(0)),  # i5
+        set(SALE_PRICE, 0),  # i4
+        set(HIGHEST_BID, 0),  # i5
         Approve(),
     )
 
@@ -80,6 +79,7 @@ def buy():
         # Verify amounts are correct
         Assert(royalty_payment.amount() == royalty_amt),
         Assert(payment.amount() == purchase_amt),
+        # Update global state
         set(OWNER, Txn.sender()),
         set(SALE_PRICE, 0),
         Approve(),
@@ -103,7 +103,7 @@ def start_sale():
 def end_sale():
     owner = get(OWNER)
 
-    return Seq(Assert(Txn.sender() == owner), set(SALE_PRICE, Int(0)), Approve())
+    return Seq(Assert(Txn.sender() == owner), set(SALE_PRICE, 0), Approve())
 
 
 def transfer():
@@ -130,8 +130,10 @@ def start_auction():
 
     return Seq(
         Assert(tx_methods & Int(4)),  # TX Methods bit[2] is set
+        # Verify payment txn
         Assert(payment.receiver() == Global.current_application_address()),
-        Assert(payment.amount() == Int(100000)),
+        Assert(payment.amount() == Int(100_000)),
+        # Set global state
         set(AUCTION_END, Global.latest_timestamp() + length),
         set(HIGHEST_BID, starting_price),
         Approve(),
@@ -145,7 +147,7 @@ def pay(receiver, amount):
             {
                 TxnField.type_enum: TxnType.Payment,
                 TxnField.receiver: receiver,
-                TxnField.amount: amount - FEE,
+                TxnField.amount: amount - Global.min_txn_fee(),
             }
         ),
         InnerTxnBuilder.Submit(),
@@ -163,11 +165,13 @@ def end_auction():
 
     return Seq(
         Assert(Global.latest_timestamp() > auction_end),
+        # Pay royalty address and owner
         pay(royalty_address, royalty_amount),
         pay(owner, highest_bid - royalty_amount),
-        set(AUCTION_END, Int(0)),
+        # Set global state
+        set(AUCTION_END, 0),
         set(OWNER, highest_bidder),
-        set(HIGHEST_BIDDER, Bytes("")),
+        set(HIGHEST_BIDDER, ""),
         Approve(),
     )
 
@@ -182,9 +186,12 @@ def bid():
 
     return Seq(
         Assert(Global.latest_timestamp() < auction_end),
+        # Verify payment transaction
         Assert(payment.amount() > highest_bid),
         Assert(app_call.sender() == payment.sender()),
+        # Return previous bid
         If(highest_bidder != Bytes(""), pay(highest_bidder, highest_bid)),
+        # Set global state
         set(HIGHEST_BID, payment.amount()),
         set(HIGHEST_BIDDER, payment.sender()),
         Approve(),
