@@ -59,6 +59,7 @@ def clawback_asa():
 
     return If(asa_id != Int(0), clawback_seq)
 
+
 @Subroutine(TealType.none)
 def claim_asa():
     asa_id = get(ASA_ID)
@@ -75,7 +76,9 @@ def claim_asa():
                 TxnField.asset_sender: Global.current_application_address(),
                 TxnField.xfer_asset: asa_id,
             }
-        )    )
+        ),
+    )
+
 
 @Subroutine(TealType.none)
 def init():
@@ -103,6 +106,7 @@ def init():
         set(HIGHEST_BID, 0),
         set(ASA_ID, asa_id),
     )
+
 
 @Subroutine(TealType.none)
 def buy():
@@ -134,6 +138,7 @@ def buy():
         clawback_asa(),
     )
 
+
 @Subroutine(TealType.none)
 def start_sale():
     price = Btoi(ARGS[1])
@@ -149,11 +154,13 @@ def start_sale():
         set(SALE_PRICE, price),
     )
 
+
 @Subroutine(TealType.none)
 def end_sale():
     owner = get(OWNER)
 
     return Seq(Assert(Txn.sender() == owner), set(SALE_PRICE, 0))
+
 
 @Subroutine(TealType.none)
 def transfer():
@@ -170,6 +177,7 @@ def transfer():
         set(OWNER, receiver),
         clawback_asa(),
     )
+
 
 @Subroutine(TealType.none)
 def start_auction():
@@ -205,6 +213,7 @@ def pay(receiver, amount):
         InnerTxnBuilder.Submit(),
     )
 
+
 @Subroutine(TealType.none)
 def end_auction():
     auction_end = get(AUCTION_END)
@@ -226,6 +235,7 @@ def end_auction():
         set(HIGHEST_BIDDER, ""),
         clawback_asa(),
     )
+
 
 @Subroutine(TealType.none)
 def bid():
