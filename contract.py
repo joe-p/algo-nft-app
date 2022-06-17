@@ -262,7 +262,7 @@ def approval():
         [Txn.on_completion() == OnComplete.DeleteApplication, Approve()],
         [fcn == Bytes("start_auction"), start_auction()],
         [fcn == Bytes("start_sale"), start_sale()],
-        [fcn == Bytes("end_sale"), start_sale()],
+        [fcn == Bytes("end_sale"), end_sale()],
         [fcn == Bytes("bid"), bid()],
         [fcn == Bytes("end_auction"), end_auction()],
         [fcn == Bytes("transfer"), transfer()],
