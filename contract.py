@@ -144,9 +144,11 @@ def start_sale():
 
     allow_sale = get(ALLOW_SALE)
     owner = get(OWNER)
+    auction_end = get(AUCTION_END)
 
     return Seq(
         Assert(allow_sale),
+        Assert(auction_end == Int(0)),
         Assert(Txn.sender() == owner),
         set(SALE_PRICE, price),
         Approve(),
@@ -164,9 +166,11 @@ def transfer():
 
     allow_transfer = get(ALLOW_TRANSFER)
     owner = get(OWNER)
+    auction_end = get(AUCTION_END)
 
     return Seq(
         Assert(allow_transfer),
+        Assert(auction_end == Int(0)),
         Assert(Txn.sender() == owner),
         set(OWNER, receiver),
         clawback_asa(),
