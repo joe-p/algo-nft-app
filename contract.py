@@ -59,7 +59,7 @@ def clawback_asa():
 
     return If(asa_id != Int(0), clawback_seq)
 
-
+@Subroutine(TealType.none)
 def claim_asa():
     asa_id = get(ASA_ID)
     owner = get(OWNER)
@@ -75,11 +75,9 @@ def claim_asa():
                 TxnField.asset_sender: Global.current_application_address(),
                 TxnField.xfer_asset: asa_id,
             }
-        ),
-        Approve(),
-    )
+        )    )
 
-
+@Subroutine(TealType.none)
 def init():
     royalty_addr = ARGS[0]
     royalty_percent = Btoi(ARGS[1])
@@ -104,10 +102,9 @@ def init():
         set(SALE_PRICE, 0),
         set(HIGHEST_BID, 0),
         set(ASA_ID, asa_id),
-        Approve(),
     )
 
-
+@Subroutine(TealType.none)
 def buy():
     royalty_payment = Gtxn[Txn.group_index() + Int(2)]
     payment = Gtxn[Txn.group_index() + Int(1)]
@@ -135,10 +132,9 @@ def buy():
         set(OWNER, Txn.sender()),
         set(SALE_PRICE, 0),
         clawback_asa(),
-        Approve(),
     )
 
-
+@Subroutine(TealType.none)
 def start_sale():
     price = Btoi(ARGS[1])
 
@@ -151,16 +147,15 @@ def start_sale():
         Assert(auction_end == Int(0)),
         Assert(Txn.sender() == owner),
         set(SALE_PRICE, price),
-        Approve(),
     )
 
-
+@Subroutine(TealType.none)
 def end_sale():
     owner = get(OWNER)
 
-    return Seq(Assert(Txn.sender() == owner), set(SALE_PRICE, 0), Approve())
+    return Seq(Assert(Txn.sender() == owner), set(SALE_PRICE, 0))
 
-
+@Subroutine(TealType.none)
 def transfer():
     receiver = ARGS[1]
 
@@ -174,10 +169,9 @@ def transfer():
         Assert(Txn.sender() == owner),
         set(OWNER, receiver),
         clawback_asa(),
-        Approve(),
     )
 
-
+@Subroutine(TealType.none)
 def start_auction():
     payment = Gtxn[Txn.group_index() + Int(1)]
 
@@ -194,10 +188,10 @@ def start_auction():
         # Set global state
         set(AUCTION_END, Global.latest_timestamp() + length),
         set(HIGHEST_BID, starting_price),
-        Approve(),
     )
 
 
+@Subroutine(TealType.none)
 def pay(receiver, amount):
     return Seq(
         InnerTxnBuilder.Begin(),
@@ -211,7 +205,7 @@ def pay(receiver, amount):
         InnerTxnBuilder.Submit(),
     )
 
-
+@Subroutine(TealType.none)
 def end_auction():
     auction_end = get(AUCTION_END)
     highest_bid = get(HIGHEST_BID)
@@ -231,10 +225,9 @@ def end_auction():
         set(OWNER, highest_bidder),
         set(HIGHEST_BIDDER, ""),
         clawback_asa(),
-        Approve(),
     )
 
-
+@Subroutine(TealType.none)
 def bid():
     payment = Gtxn[Txn.group_index() + Int(1)]
 
@@ -252,26 +245,28 @@ def bid():
         # Set global state
         set(HIGHEST_BID, payment.amount()),
         set(HIGHEST_BIDDER, payment.sender()),
-        Approve(),
     )
 
 
 def approval():
     fcn = ARGS[0]
 
-    return Cond(
-        [Txn.application_id() == Int(0), init()],
-        # Delete only for debugging sake
-        # TODO: Implement delete function that requires input from owner and creator
-        [Txn.on_completion() == OnComplete.DeleteApplication, Approve()],
-        [fcn == Bytes("start_auction"), start_auction()],
-        [fcn == Bytes("start_sale"), start_sale()],
-        [fcn == Bytes("end_sale"), end_sale()],
-        [fcn == Bytes("bid"), bid()],
-        [fcn == Bytes("end_auction"), end_auction()],
-        [fcn == Bytes("transfer"), transfer()],
-        [fcn == Bytes("buy"), buy()],
-        [fcn == Bytes("claim_asa"), claim_asa()],
+    return Seq(
+        Cond(
+            [Txn.application_id() == Int(0), init()],
+            # Delete only for debugging sake
+            # TODO: Implement delete function that requires input from owner and creator
+            [Txn.on_completion() == OnComplete.DeleteApplication, Approve()],
+            [fcn == Bytes("start_auction"), start_auction()],
+            [fcn == Bytes("start_sale"), start_sale()],
+            [fcn == Bytes("end_sale"), end_sale()],
+            [fcn == Bytes("bid"), bid()],
+            [fcn == Bytes("end_auction"), end_auction()],
+            [fcn == Bytes("transfer"), transfer()],
+            [fcn == Bytes("buy"), buy()],
+            [fcn == Bytes("claim_asa"), claim_asa()],
+        ),
+        Approve(),
     )
 
 
