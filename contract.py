@@ -109,8 +109,8 @@ def init():
 
 
 def buy():
-    royalty_payment = Gtxn[2]
-    payment = Gtxn[1]
+    royalty_payment = Gtxn[Txn.group_index() + Int(2)]
+    payment = Gtxn[Txn.group_index() + Int(1)]
 
     sale_price = get(SALE_PRICE)
     royalty_percent = get(ROYALTY_PERCENT)
@@ -175,7 +175,7 @@ def transfer():
 
 
 def start_auction():
-    payment = Gtxn[1]
+    payment = Gtxn[Txn.group_index() + Int(1)]
 
     starting_price = Btoi(ARGS[1])
     length = Btoi(ARGS[2])
@@ -232,8 +232,7 @@ def end_auction():
 
 
 def bid():
-    payment = Gtxn[1]
-    app_call = Gtxn[0]
+    payment = Gtxn[Txn.group_index() + Int(1)]
 
     auction_end = get(AUCTION_END)
     highest_bidder = get(HIGHEST_BIDDER)
@@ -243,7 +242,7 @@ def bid():
         Assert(Global.latest_timestamp() < auction_end),
         # Verify payment transaction
         Assert(payment.amount() > highest_bid),
-        Assert(app_call.sender() == payment.sender()),
+        Assert(Txn.sender() == payment.sender()),
         # Return previous bid
         If(highest_bidder != Bytes(""), pay(highest_bidder, highest_bid)),
         # Set global state
