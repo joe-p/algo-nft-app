@@ -2,11 +2,32 @@
     "name": "MyApp",
     "methods": [
         {
-            "name": "transfer",
+            "name": "end_auction",
+            "args": [],
+            "returns": {
+                "type": "void"
+            }
+        },
+        {
+            "name": "bid",
+            "args": [],
+            "returns": {
+                "type": "void"
+            }
+        },
+        {
+            "name": "end_sale",
+            "args": [],
+            "returns": {
+                "type": "void"
+            }
+        },
+        {
+            "name": "start_sale",
             "args": [
                 {
-                    "type": "address",
-                    "name": "receiver"
+                    "type": "uint64",
+                    "name": "price"
                 }
             ],
             "returns": {
@@ -21,13 +42,6 @@
             }
         },
         {
-            "name": "bid",
-            "args": [],
-            "returns": {
-                "type": "void"
-            }
-        },
-        {
             "name": "claim_asa",
             "args": [],
             "returns": {
@@ -35,8 +49,17 @@
             }
         },
         {
-            "name": "end_auction",
-            "args": [],
+            "name": "start_auction",
+            "args": [
+                {
+                    "type": "uint64",
+                    "name": "starting_price"
+                },
+                {
+                    "type": "uint64",
+                    "name": "length"
+                }
+            ],
             "returns": {
                 "type": "void"
             }
@@ -78,34 +101,11 @@
             }
         },
         {
-            "name": "end_sale",
-            "args": [],
-            "returns": {
-                "type": "void"
-            }
-        },
-        {
-            "name": "start_sale",
+            "name": "transfer",
             "args": [
                 {
-                    "type": "uint64",
-                    "name": "price"
-                }
-            ],
-            "returns": {
-                "type": "void"
-            }
-        },
-        {
-            "name": "start_auction",
-            "args": [
-                {
-                    "type": "uint64",
-                    "name": "starting_price"
-                },
-                {
-                    "type": "uint64",
-                    "name": "length"
+                    "type": "address",
+                    "name": "receiver"
                 }
             ],
             "returns": {
