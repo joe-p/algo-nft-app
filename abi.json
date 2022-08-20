@@ -1,0 +1,118 @@
+{
+    "name": "MyApp",
+    "methods": [
+        {
+            "name": "transfer",
+            "args": [
+                {
+                    "type": "address",
+                    "name": "receiver"
+                }
+            ],
+            "returns": {
+                "type": "void"
+            }
+        },
+        {
+            "name": "buy",
+            "args": [],
+            "returns": {
+                "type": "void"
+            }
+        },
+        {
+            "name": "bid",
+            "args": [],
+            "returns": {
+                "type": "void"
+            }
+        },
+        {
+            "name": "claim_asa",
+            "args": [],
+            "returns": {
+                "type": "void"
+            }
+        },
+        {
+            "name": "end_auction",
+            "args": [],
+            "returns": {
+                "type": "void"
+            }
+        },
+        {
+            "name": "initialize",
+            "args": [
+                {
+                    "type": "address",
+                    "name": "royalty_addr"
+                },
+                {
+                    "type": "uint64",
+                    "name": "royalty_percent"
+                },
+                {
+                    "type": "string",
+                    "name": "metadata"
+                },
+                {
+                    "type": "bool",
+                    "name": "allow_transfer"
+                },
+                {
+                    "type": "bool",
+                    "name": "allow_sale"
+                },
+                {
+                    "type": "bool",
+                    "name": "allow_auction"
+                },
+                {
+                    "type": "uint64",
+                    "name": "asa_id"
+                }
+            ],
+            "returns": {
+                "type": "void"
+            }
+        },
+        {
+            "name": "end_sale",
+            "args": [],
+            "returns": {
+                "type": "void"
+            }
+        },
+        {
+            "name": "start_sale",
+            "args": [
+                {
+                    "type": "uint64",
+                    "name": "price"
+                }
+            ],
+            "returns": {
+                "type": "void"
+            }
+        },
+        {
+            "name": "start_auction",
+            "args": [
+                {
+                    "type": "uint64",
+                    "name": "starting_price"
+                },
+                {
+                    "type": "uint64",
+                    "name": "length"
+                }
+            ],
+            "returns": {
+                "type": "void"
+            }
+        }
+    ],
+    "desc": null,
+    "networks": {}
+}
